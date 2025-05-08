@@ -1,10 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "common/utility.h"
 
-#include <clay/clay.h>
-
-int main(void)
+i32 main(i32 argc, i8 **argv)
 {
+    // TODO: parse cmd line args
+
     printf("haiii\n");
     return 0;
 }

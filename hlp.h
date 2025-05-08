@@ -1,10 +1,6 @@
 #ifndef INCLUDE_HLP_H
 #define INCLUDE_HLP_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -346,9 +342,6 @@ Hlp_String_View hlp_sv_from_parts(const char *data, size_t count);
 #define SV_Arg(sv) (int) (sv).count, (sv).data
 #endif // SV_Arg
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
 #endif // INCLUDE_HLP_H
 
 #ifdef HLP_IMPLEMENTATION
