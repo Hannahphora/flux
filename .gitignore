@@ -1,0 +1,8 @@
+
+build/
+out/
+
+./build
+./build.exe
+./build.old
+./build.exe.old
