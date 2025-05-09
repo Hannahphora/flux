@@ -36,29 +36,95 @@ typedef double                  f64;
 #define FLUX_VFPRINTF vfprintf
 #endif // FLUX_VFPRINTF
 
-#ifndef FLUX_ASSERT
-#include <assert.h>
-#define FLUX_ASSERT assert
-#endif // FLUX_ASSERT
+#ifdef _WIN32
+    // windows specific
 
-#ifndef FLUX_MALLOC
-#define FLUX_MALLOC malloc
-#endif // FLUX_MALLOC
+    #define WIN32_LEAN_AND_MEAN
+    #define _WINUSER_
+    #define _WINGDI_
+    #define _IMM_
+    #define _WINCON_
+    #include <windows.h>
+    #include <direct.h>
+    #include <shellapi.h>
 
-#ifndef FLUX_REALLOC
-#define FLUX_REALLOC realloc
-#endif // FLUX_REALLOC
+    #define FLUX_LINE_END "\r\n"
+    #define FLUX_INVALID_FILE INVALID_HANDLE_VALUE
+    #define FLUX_INVALID_PROC INVALID_HANDLE_VALUE
+    typedef HANDLE Flux_File;
+    typedef HANDLE Flux_Proc;
+    
+    
 
-#ifndef FLUX_FREE
-#define FLUX_FREE free
-#endif // FLUX_FREE
+#else
+    // linux specific
 
-// https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
-#define FLUX_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (printf, STRING_INDEX, FIRST_TO_CHECK)))
+    #include <sys/types.h>
+    #include <sys/wait.h>
+    #include <sys/stat.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <dirent.h>
 
+    #define FLUX_LINE_END "\n"
+    #define FLUX_INVALID_FILE (-1)
+    #define FLUX_INVALID_PROC (-1)
+    typedef int Flux_File;
+    typedef int Flux_Proc;
+
+#endif
+
+typedef u16 Flux_Log_Level;
+typedef enum Flux_Log_Level_Bits {
+    FLUX_LOG_LEVEL_VERBOSE_BIT  = 0x0001,
+    FLUX_LOG_LEVEL_INFO_BIT     = 0x0010,
+    FLUX_LOG_LEVEL_WARNING_BIT  = 0x0100,
+    FLUX_LOG_LEVEL_ERROR_BIT    = 0x1000,
+} Flux_Log_Level_Bits;
+
+bool flux_fprintf(Flux_File dest, i8 *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+bool flux_sprintf(i8 *dest, u32 dest_len, i8 *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+
+#ifndef FLUX_MIN_LOG_LEVEL
+#define FLUX_MIN_LOG_LEVEL FLUX_LOG_LEVEL_INFO_BIT
+#endif // FLUX_MIN_LOG_LEVEL
+
+static void
+_flux_log(i8 *caller_file, i32 caller_line, Flux_Log_Level lvl, i8 *fmt, ...)
+__attribute__ ((format (printf, 4, 5)))
+{
+    if (lvl < FLUX_MIN_LOG_LEVEL)
+        return;
+    
+    // TEMPORARY! replace fprintf with a proper method
+    
+    if (lvl & FLUX_LOG_LEVEL_VERBOSE_BIT) fprintf(stderr, "[");
+    if (lvl & FLUX_LOG_LEVEL_INFO_BIT)
+    if (lvl & FLUX_LOG_LEVEL_VERBOSE_BIT)
+
+    switch (level) {
+    case lvl:
+        FLUX_FPRINTF(stderr, "[INFO] ");
+        break;
+    case FLUX_WARNING:
+        FLUX_FPRINTF(stderr, "[WARNING] ");
+        break;
+    case FLUX_ERROR:
+        FLUX_FPRINTF(stderr, "[ERROR] ");
+        break;
+    case FLUX_NO_LOGS:
+        return;
+    default:
+        FLUX_UNREACHABLE("flux_log");
+    }
+
+}
+
+#define FLUX_LOG(lvl, msg, ...) do { _flux_log(__FILE__, __LINE__, lvl, msg,  __VA_ARGS__); } while(0)
 #define FLUX_UNUSED(value) (void)(value)
-#define FLUX_TODO(message) do { FLUX_FPRINTF(stderr, "%s:%d: TODO: %s\n", __FILE__, __LINE__, message); abort(); } while(0)
-#define FLUX_UNREACHABLE(message) do { FLUX_FPRINTF(stderr, "%s:%d: UNREACHABLE: %s\n", __FILE__, __LINE__, message); abort(); } while(0)
+#define FLUX_TODO(msg) do { FLUX_LOG(FLUX_LOG_LEVEL_ERROR_BIT, msg); abort(); } while(0)
+#define FLUX_UNREACHABLE(msg) do { FLUX_LOG(FLUX_LOG_LEVEL_ERROR_BIT, msg); abort(); } while(0)
+#define FLUX_ASSERT(x) (!(x) && FLUX_LOG(FLUX_LOG_LEVEL_ERROR_BIT, "Assertion failed: %s", #x) && (abort(), 1))
 
 #define FLUX_ARRAY_LEN(array) (sizeof(array)/sizeof(array[0]))
 #define FLUX_ARRAY_GET(array, index) (FLUX_ASSERT((size_t)index < FLUX_ARRAY_LEN(array)), array[(size_t)index])
@@ -70,14 +136,6 @@ typedef double                  f64;
 #define flux_return_defer(value) do { result = (value); goto defer; } while(0)
 
 
-
-#ifdef FLUX_HM_IMPL
-
-#endif // FLUX_HM_IMPL
-
-#ifdef FLUX_ALLOC_IMPL
-
-#endif // FLUX_ALLOC_IMPL
 
 #ifdef FLUX_LOG_IMPL
 
@@ -92,9 +150,10 @@ typedef double                  f64;
     #define FLUX_MIN_LOG_LEVEL FLUX_INFO
     #endif // FLUX_MIN_LOG_LEVEL
 
-    void flux_log(Flux_Log_Level level, const char *fmt, ...) FLUX_PRINTF_FORMAT(2, 3)
+    void flux_log(Flux_Log_Level level, const char *fmt, ...)
     {
-        if (level < FLUX_MIN_LOG_LEVEL) return;
+        if (level < FLUX_MIN_LOG_LEVEL)
+            return;
 
         switch (level) {
         case FLUX_INFO:
@@ -106,7 +165,8 @@ typedef double                  f64;
         case FLUX_ERROR:
             FLUX_FPRINTF(stderr, "[ERROR] ");
             break;
-        case FLUX_NO_LOGS: return;
+        case FLUX_NO_LOGS:
+            return;
         default:
             FLUX_UNREACHABLE("flux_log");
         }

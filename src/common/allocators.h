@@ -42,7 +42,6 @@
 #define FLUX_ALLOCATOR_BACKEND_LIBC_MALLOC                  0
 #define FLUX_ALLOCATOR_BACKEND_LINUX_MMAP                   1
 #define FLUX_ALLOCATOR_BACKEND_WIN32_VIRUALALLOC            2
-#define FLUX_ALLOCATOR_BACKEND_WASM_HEAPBASE                3
 
 #ifndef FLUX_ALLOCATOR_BACKEND
     // default backend to libc malloc
@@ -95,17 +94,45 @@ typedef struct {
 
     bool flux_allocator_backing_alloc(Flux_Allocator_Backing *backing, size_t size_bytes)
     {
-
+        backing->ptr = mmap(
+            NULL,                           // let kernel choose page aligned location
+            size_bytes,                     // size of the allocation in bytes
+            PROT_READ | PROT_WRITE,         // memory protection level
+            MAP_ANONYMOUS | MAP_PRIVATE,    // flags: not backed by file and process local
+            -1,                             // file descriptor: N/A
+            0                               // file offset: N/A
+        );
+        if (backing->ptr == MAP_FAILED) {
+            // TODO: log mmap() error and errno
+            return false;
+        }
+        backing->size = size_bytes;
+        return true;
     }
 
     bool flux_allocator_backing_realloc(Flux_Allocator_Backing *backing, size_t size_bytes)
     {
-        
+        void *tmp = mremap(
+            backing->ptr,       // ptr to old mapping
+            backing->size,      // size of old mapping
+            size_bytes          // size of new mapping
+            MREMAP_MAYMOVE,     // flags: allow original mapping to be moved
+        );
+        if (tmp == MAP_FAILED) {
+            // TODO: log mremap() error and errno
+            return false;
+        }
+        backing->ptr = tmp;
+        backing->size = size_bytes;
+        return true;
     }
 
     bool flux_allocator_backing_free(Flux_Allocator_Backing *backing)
     {
-
+        if (!munmap(backing->ptr, backing->size)) {
+            // TODO: log munmap() error and errno
+            return false;
+        }
         backing->ptr = NULL;
         backing->size = 0;
         return true;
@@ -128,14 +155,12 @@ typedef struct {
             NULL,                           // unknown position
             size_bytes,                     // bytes to allocate
             MEM_COMMIT | MEM_RESERVE,       // reserve and commit allocated page 
-            PAGE_READWRITE                  // permissions (read/write)
+            PAGE_READWRITE                  // permissions: read/write
         );
-
         if (INV_HANDLE(backing->ptr)) {
             // TODO: log VirtualAllocEx() error
             return false;
         }
-
         backing->size = size_bytes;
         return true;
     }
@@ -147,9 +172,8 @@ typedef struct {
             NULL,                           // unknown position
             size_bytes,                     // bytes to allocate
             MEM_COMMIT | MEM_RESERVE,       // reserve and commit allocated page 
-            PAGE_READWRITE                  // permissions (read/write)
+            PAGE_READWRITE                  // permissions: read/write
         );
-
         if (INV_HANDLE(tmp)) {
             // TODO: log VirtualAllocEx() error
             return false;
@@ -167,30 +191,21 @@ typedef struct {
 
     bool flux_allocator_backing_free(Flux_Allocator_Backing *backing)
     {
-        if (INV_HANDLE(backing->ptr)) {
-            // TODO: log invalid ptr error
-            return false;
-        }
-
         BOOL free_result = VirtualFreeEx(
             GetCurrentProcess(),            // deallocate from current process address space
             (LPVOID)backing->ptr,           // address to deallocate
             0,                              // bytes to deallocate (unknown, deallocate entire page)
             MEM_RELEASE                     // release the page (and implicitly decommit it)
         );
-
         if (free_result == FALSE) {
             // TODO: log VirtualFreeEx() error
             return false;
         }
-
         backing->ptr = NULL;
         backing->size = 0;
         return true;
     }
 
-#elif FLUX_ALLOCATOR_BACKEND == FLUX_ALLOCATOR_BACKEND_WASM_HEAPBASE
-    #error "FLUX_ALLOCATOR_BACKEND_WASM_HEAPBASE is not implemented"
 #else
     #error "Unknown allocator backend"
 #endif // FLUX_ALLOCATOR_BACKEND
