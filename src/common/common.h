@@ -122,9 +122,9 @@ typedef double                  f64;
 
 #endif // INCLUDE_COMMON_H
 
-#ifndef FLUX_USE_PREFIX_GUARD
-#define FLUX_USE_PREFIX_GUARD
-    #ifndef FLUX_USE_PREFIX
+#ifndef COMMON_H_USE_FLUX_PREFIX_GUARD
+#define COMMON_H_USE_FLUX_PREFIX_GUARD
+    #ifndef COMMON_H_USE_FLUX_PREFIX
 
         #define FPRINTF                         FLUX_FPRINTF
         #define VFPRINTF                        FLUX_VFPRINTF
@@ -138,25 +138,6 @@ typedef double                  f64;
         #define shift                           flux_shift
         #define return_defer                    flux_return_defer
 
-        // dynamic array
-        #define DA_IMPL                         FLUX_DA_IMPL
-        #define DA_INIT_CAP                     FLUX_DA_INIT_CAP
-        #define DA_GROWTH_FACTOR                FLUX_DA_GROWTH_FACTOR
-        #define da_define                       flux_da_define
-        #define da_append                       flux_da_append
-        #define da_append_many                  flux_da_append_many
-        #define da_resize                       flux_da_resize
-        #define da_reserve                      flux_da_reserve
-        #define da_last                         flux_da_last
-        #define da_remove_unordered             flux_da_remove_unordered
-        #define da_free                         flux_da_free
-
-        // hash map
-        #define HM_IMPL                         FLUX_HM_IMPL
-
-        // allocators
-        #define ALLOC_IMPL                      FLUX_ALLOC_IMPL
-
         // logging
         #define LOG_IMPL                        FLUX_LOG_IMPL
         #define Log_Level                       Flux_Log_Level
@@ -167,5 +148,5 @@ typedef double                  f64;
         #define MIN_LOG_LEVEL                   FLUX_MIN_LOG_LEVEL
         // NOTE: log is already taken in math.h, so prefix is kept for flux_log
 
-    #endif // FLUX_USE_PREFIX
-#endif // FLUX_USE_PREFIX_GUARD
+    #endif // COMMON_H_USE_FLUX_PREFIX
+#endif // COMMON_H_USE_FLUX_PREFIX_GUARD
