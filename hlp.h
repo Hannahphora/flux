@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DA_IMPLEMENTATION
+#include "src/common/ds.h"
+
 #define bool  _Bool
 #define false 0
 #define true  1
@@ -70,88 +73,12 @@ typedef double              f64;
     #define HLP_LINE_END "\n"
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
-// https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
-#define HLP_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (printf, STRING_INDEX, FIRST_TO_CHECK)))
-#else
-// TODO: implement HLP_PRINTF_FORMAT for MSVC
-#define HLP_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK)
-#endif
-
 #define HLP_UNUSED(value) (void)(value)
 #define HLP_TODO(message) do { fprintf(stderr, "%s:%d: TODO: %s\n", __FILE__, __LINE__, message); abort(); } while(0)
 #define HLP_UNREACHABLE(message) do { fprintf(stderr, "%s:%d: UNREACHABLE: %s\n", __FILE__, __LINE__, message); abort(); } while(0)
 
 #define HLP_ARRAY_LEN(array) (sizeof(array)/sizeof(array[0]))
 #define HLP_ARRAY_GET(array, index) (HLP_ASSERT((size_t)index < HLP_ARRAY_LEN(array)), array[(size_t)index])
-
-#ifndef HLP_DA_INIT_CAP
-#define HLP_DA_INIT_CAP 256U
-#endif // HLP_DA_INIT_CAP
-
-#define hlp_da_define(name, T)\
-    typedef struct {\
-        T *items;\
-        size_t count;\
-        size_t capacity;\
-    } name
-// hlp_da_define
-
-#define hlp_da_reserve(da, expected_capacity)\
-    do {\
-        if ((expected_capacity) > (da)->capacity) {\
-            if ((da)->capacity == 0) {\
-                (da)->capacity = HLP_DA_INIT_CAP;\
-            }\
-            while ((expected_capacity) > (da)->capacity) {\
-                (da)->capacity *= 2;\
-            }\
-            (da)->items = HLP_REALLOC((da)->items, (da)->capacity * sizeof(*(da)->items));\
-            HLP_ASSERT((da)->items != NULL && "Memory allocation failed");\
-        }\
-    } while (0)
-// hlp_da_reserve
-
-#define hlp_da_append(da, item)\
-    do {\
-        hlp_da_reserve((da), (da)->count + 1);\
-        (da)->items[(da)->count++] = (item);\
-    } while (0)
-// hlp_da_append
-
-#define hlp_da_append_many(da, new_items, new_items_count)\
-    do {\
-        hlp_da_reserve((da), (da)->count + (new_items_count));\
-        memcpy((da)->items + (da)->count, (new_items), (new_items_count)*sizeof(*(da)->items));\
-        (da)->count += (new_items_count);\
-    } while (0)
-// hlp_da_append_many
-
-#define hlp_da_resize(da, new_size)\
-    do {\
-        hlp_da_reserve((da), new_size);\
-        (da)->count = (new_size);\
-    } while (0)
-// hlp_da_resize
-
-#define hlp_da_last(da) (da)->items[(HLP_ASSERT((da)->count > 0), (da)->count-1)]
-
-#define hlp_da_remove_unordered(da, i)\
-    do {\
-        size_t j = (i);\
-        HLP_ASSERT(j < (da)->count);\
-        (da)->items[j] = (da)->items[--(da)->count];\
-    } while(0)
-// hlp_da_remove_unordered
-
-#define hlp_da_free(da)\
-    do {\
-        HLP_FREE((da).items);\
-        (da).items = NULL;\
-        (da).count = 0;\
-        (da).capacity = 0;\
-    } while (0)
-// hlp_da_free
 
 typedef enum {
     HLP_INFO,
@@ -163,12 +90,12 @@ typedef enum {
 // any messages with the level below hlp_minimal_log_level are going to be suppressed
 extern Hlp_Log_Level hlp_minimal_log_level;
 
-void hlp_log(Hlp_Log_Level level, const char *fmt, ...) HLP_PRINTF_FORMAT(2, 3);
+void hlp_log(Hlp_Log_Level level, const char *fmt, ...);
 
 // basically pops an element from the beginning of a sized array
 #define hlp_shift(xs, xs_sz) (HLP_ASSERT((xs_sz) > 0), (xs_sz)--, *(xs)++)
 
-hlp_da_define(Hlp_File_Paths, const char *);
+da_define(Hlp_File_Paths, const char *);
 
 typedef enum {
     HLP_FILE_REGULAR = 0,
@@ -187,27 +114,28 @@ bool hlp_delete_file(const char *path);
 
 #define hlp_return_defer(value) do { result = (value); goto defer; } while(0)
 
-hlp_da_define(Hlp_String_Builder, char);
+da_define(Hlp_String_Builder, char);
 
 bool hlp_read_entire_file(const char *path, Hlp_String_Builder *sb);
-int hlp_sb_appendf(Hlp_String_Builder *sb, const char *fmt, ...) HLP_PRINTF_FORMAT(2, 3);
+
+int hlp_sb_appendf(Hlp_String_Builder *sb, const char *fmt, ...);
 
 // append a sized buffer to a string builder
-#define hlp_sb_append_buf(sb, buf, size) hlp_da_append_many(sb, buf, size)
+#define hlp_sb_append_buf(sb, buf, size) da_append_many(sb, buf, size)
 
 // append a null-terminated string to a string builder
 #define hlp_sb_append_cstr(sb, cstr)\
     do {\
         const char *s = (cstr);\
         size_t n = strlen(s);\
-        hlp_da_append_many(sb, s, n);\
+        da_append_many(sb, s, n);\
     } while (0)
 // hlp_sb_append_cstr
 
 // appends a single null character to string builder, for use as c string
-#define hlp_sb_append_null(sb) hlp_da_append_many(sb, "", 1)
+#define hlp_sb_append_null(sb) da_append_many(sb, "", 1)
 
-#define hlp_sb_free(sb) hlp_da_free(sb)
+#define hlp_sb_free(sb) da_free(sb)
 
 // process handle
 #ifdef _WIN32
@@ -226,7 +154,7 @@ Hlp_Fd hlp_fd_open_for_read(const char *path);
 Hlp_Fd hlp_fd_open_for_write(const char *path);
 void hlp_fd_close(Hlp_Fd fd);
 
-hlp_da_define(Hlp_Procs, Hlp_Proc);
+da_define(Hlp_Procs, Hlp_Proc);
 
 // Wait until the process has finished
 bool hlp_proc_wait(Hlp_Proc proc);
@@ -237,7 +165,7 @@ bool hlp_procs_wait_and_reset(Hlp_Procs *procs);
 // Append a new process to procs array and if procs.count reaches max_procs_count call hlp_procs_wait_and_reset() on it
 bool hlp_procs_append_with_flush(Hlp_Procs *procs, Hlp_Proc proc, size_t max_procs_count);
 
-hlp_da_define(Hlp_Cmd, const char *);
+da_define(Hlp_Cmd, const char *);
 
 typedef struct {
     Hlp_Fd *fdin;
@@ -248,11 +176,11 @@ typedef struct {
 // Render a string representation of a command into a string builder, not null terminated by default
 void hlp_cmd_render(Hlp_Cmd cmd, Hlp_String_Builder *render);
 
-#define hlp_cmd_append(cmd, ...) hlp_da_append_many(cmd, ((const char*[]){__VA_ARGS__}),\
+#define hlp_cmd_append(cmd, ...) da_append_many(cmd, ((const char*[]){__VA_ARGS__}),\
                        (sizeof((const char*[]){__VA_ARGS__})/sizeof(const char*)))
 // hlp_cmd_append
 
-#define hlp_cmd_extend(cmd, other_cmd) hlp_da_append_many(cmd, (other_cmd)->items, (other_cmd)->count)
+#define hlp_cmd_extend(cmd, other_cmd) da_append_many(cmd, (other_cmd)->items, (other_cmd)->count)
 
 #define hlp_cmd_free(cmd) HLP_FREE(cmd.items)
 
@@ -280,7 +208,7 @@ bool hlp_cmd_run_sync_redirect_and_reset(Hlp_Cmd *cmd, Hlp_Cmd_Redirect redirect
 
 char *hlp_temp_strdup(const char *cstr);
 void *hlp_temp_alloc(size_t size);
-char *hlp_temp_sprintf(const char *format, ...) HLP_PRINTF_FORMAT(1, 2);
+char *hlp_temp_sprintf(const char *format, ...);
 void hlp_temp_reset(void);
 size_t hlp_temp_save(void);
 void hlp_temp_rewind(size_t checkpoint);
@@ -395,13 +323,13 @@ void _hlp_auto_rebuild(int argc, char **argv, const char *source_path, ...)
 #endif
 
     Hlp_File_Paths source_paths = {0};
-    hlp_da_append(&source_paths, source_path);
+    da_append(&source_paths, source_path);
     va_list args;
     va_start(args, source_path);
     for (;;) {
         const char *path = va_arg(args, const char*);
         if (path == NULL) break;
-        hlp_da_append(&source_paths, path);
+        da_append(&source_paths, path);
     }
     va_end(args);
 
@@ -429,7 +357,7 @@ void _hlp_auto_rebuild(int argc, char **argv, const char *source_path, ...)
 #endif
 
     hlp_cmd_append(&cmd, binary_path);
-    hlp_da_append_many(&cmd, argv, argc);
+    da_append_many(&cmd, argv, argc);
     if (!hlp_cmd_run_sync_and_reset(&cmd)) exit(1);
     exit(0);
 }
@@ -528,9 +456,9 @@ void hlp_cmd_render(Hlp_Cmd cmd, Hlp_String_Builder *render)
         if (!strchr(arg, ' ')) {
             hlp_sb_append_cstr(render, arg);
         } else {
-            hlp_da_append(render, '\'');
+            da_append(render, '\'');
             hlp_sb_append_cstr(render, arg);
-            hlp_da_append(render, '\'');
+            da_append(render, '\'');
         }
     }
 }
@@ -611,7 +539,7 @@ Hlp_Proc hlp_cmd_run_async_redirect(Hlp_Cmd cmd, Hlp_Cmd_Redirect redirect)
         // NOTE: This leaks a bit of memory in the child process.
         // But do we actually care? It's a one off leak anyway...
         Hlp_Cmd cmd_null = {0};
-        hlp_da_append_many(&cmd_null, cmd.items, cmd.count);
+        da_append_many(&cmd_null, cmd.items, cmd.count);
         hlp_cmd_append(&cmd_null, NULL);
 
         if (execvp(cmd.items[0], (char * const*) cmd_null.items) < 0) {
@@ -803,7 +731,7 @@ bool hlp_proc_wait(Hlp_Proc proc)
 
 bool hlp_procs_append_with_flush(Hlp_Procs *procs, Hlp_Proc proc, size_t max_procs_count)
 {
-    hlp_da_append(procs, proc);
+    da_append(procs, proc);
 
     if (procs->count >= max_procs_count) {
         if (!hlp_procs_wait_and_reset(procs)) return false;
@@ -896,7 +824,7 @@ bool hlp_read_entire_dir(const char *parent, Hlp_File_Paths *children)
     errno = 0;
     struct dirent *ent = readdir(dir);
     while (ent != NULL) {
-        hlp_da_append(children, hlp_temp_strdup(ent->d_name));
+        da_append(children, hlp_temp_strdup(ent->d_name));
         ent = readdir(dir);
     }
 
@@ -995,9 +923,9 @@ bool hlp_win_delete_current_binary(const char *path)
 {
     hlp_log(HLP_INFO, "deleting %s", path);
 
-    hlp_da_define(Wide_Str, WCHAR);
+    da_define(Wide_Str, WCHAR);
     Wide_Str p = {0};
-    // hlp_da_append_many(&p, path);
+    // da_append_many(&p, path);
     // hlp_sb_append_cstr(&p, path);
     // hlp_sb_append_null(&p);
 
@@ -1078,9 +1006,9 @@ bool hlp_copy_directory_recursively(const char *src_path, const char *dst_path)
 
 defer:
     hlp_temp_rewind(temp_checkpoint);
-    hlp_da_free(src_sb);
-    hlp_da_free(dst_sb);
-    hlp_da_free(children);
+    da_free(src_sb);
+    da_free(dst_sb);
+    da_free(children);
     return result;
 }
 
@@ -1293,7 +1221,7 @@ int hlp_sb_appendf(Hlp_String_Builder *sb, const char *fmt, ...)
     // NOTE: the new_capacity needs to be +1 because of the null terminator.
     // However, further below we increase sb->count by n, not n + 1.
     // This is because we don't want the sb to include the null terminator. The user can always sb_append_null() if they want it
-    hlp_da_reserve(sb, sb->count + n + 1);
+    da_reserve(sb, sb->count + n + 1);
     char *dest = sb->items + sb->count;
     va_start(args, fmt);
     vsnprintf(dest, n+1, fmt, args);
@@ -1593,14 +1521,14 @@ int closedir(DIR *dirp)
         #define get_file_type hlp_get_file_type
         #define delete_file hlp_delete_file
         #define return_defer hlp_return_defer
-        #define da_append hlp_da_append
-        #define da_free hlp_da_free
-        #define da_append_many hlp_da_append_many
-        #define da_resize hlp_da_resize
-        #define da_reserve hlp_da_reserve
-        #define da_last hlp_da_last
-        #define da_remove_unordered hlp_da_remove_unordered
-        #define da_foreach hlp_da_foreach
+        #define da_append da_append
+        #define da_free da_free
+        #define da_append_many da_append_many
+        #define da_resize da_resize
+        #define da_reserve da_reserve
+        #define da_last da_last
+        #define da_remove_unordered da_remove_unordered
+        #define da_foreach da_foreach
         #define String_Builder Hlp_String_Builder
         #define read_entire_file hlp_read_entire_file
         #define sb_appendf hlp_sb_appendf

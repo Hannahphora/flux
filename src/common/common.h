@@ -1,10 +1,32 @@
-#ifndef INCLUDE_UTILITY_H
-#define INCLUDE_UTILITY_H
+#ifndef INCLUDE_COMMON_H
+#define INCLUDE_COMMON_H
 
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "types.h"
+// testing
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <ctype.h>
+#include <limits.h>
+// end testing
+
+#define bool  _Bool
+#define false 0
+#define true  1
+
+typedef unsigned char            u8;
+typedef unsigned short          u16;
+typedef unsigned int            u32;
+typedef unsigned long long      u64;
+typedef char                     i8;
+typedef short                   i16;
+typedef int                     i32;
+typedef long long               i64;
+typedef float                   f32;
+typedef double                  f64;
 
 #ifndef FLUX_FPRINTF
 #define FLUX_FPRINTF fprintf
@@ -31,13 +53,8 @@
 #define FLUX_FREE free
 #endif // FLUX_FREE
 
-#if defined(__GNUC__) || defined(__clang__)
-    // https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
-    #define FLUX_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (printf, STRING_INDEX, FIRST_TO_CHECK)))
-#else
-    // NOTE: checking printf style formatting function attribute is not available on msvc
-    #define FLUX_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK)
-#endif
+// https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
+#define FLUX_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (printf, STRING_INDEX, FIRST_TO_CHECK)))
 
 #define FLUX_UNUSED(value) (void)(value)
 #define FLUX_TODO(message) do { FLUX_FPRINTF(stderr, "%s:%d: TODO: %s\n", __FILE__, __LINE__, message); abort(); } while(0)
@@ -103,7 +120,7 @@
 
 #endif // FLUX_LOG_IMPL
 
-#endif // INCLUDE_UTILITY_H
+#endif // INCLUDE_COMMON_H
 
 #ifndef FLUX_USE_PREFIX_GUARD
 #define FLUX_USE_PREFIX_GUARD

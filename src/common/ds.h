@@ -1,22 +1,11 @@
-#ifndef INCLUDE_TYPES_H
-#define INCLUDE_TYPES_H
+/*
+    NOTE: data structures depends on allocators.h for allocation
+*/
 
-#define bool  _Bool
-#define false 0
-#define true  1
+#ifndef INCLUDE_DS_H
+#define INCLUDE_DS_H
 
-typedef unsigned char            u8;
-typedef unsigned short          u16;
-typedef unsigned int            u32;
-typedef unsigned long long      u64;
-typedef char                     i8;
-typedef short                   i16;
-typedef int                     i32;
-typedef long long               i64;
-typedef float                   f32;
-typedef double                  f64;
-
-#ifdef DA_IMPL
+#ifdef DA_IMPLEMENTATION
 
     #ifndef DA_INIT_CAP
     #define DA_INIT_CAP 64
@@ -89,11 +78,13 @@ typedef double                  f64;
             (da).capacity = 0;\
         } while (0)
     // da_free
-
-#endif // DA_IMPL
-
-#ifdef HM_IMPL
     
-#endif // HM_IMPL
+#endif // DA_IMPLEMENTATION
 
-#endif // INCLUDE_TYPES_H
+#ifdef HM_IMPLEMENTATION
+
+
+
+#endif // HM_IMPLEMENTATION
+
+#endif // INCLUDE_DS_H

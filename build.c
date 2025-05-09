@@ -1,6 +1,9 @@
 #define HLP_IMPLEMENTATION
 #include "hlp.h"
 
+#define DA_IMPLEMENTATION
+#include "src/common/ds.h"
+
 #define OUT_DIR "out/"
 #define SRC_DIR "src/"
 #define RES_DIR "res/"
