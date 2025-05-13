@@ -3,10 +3,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 // testing
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
@@ -14,8 +13,8 @@
 // end testing
 
 #define bool  _Bool
-#define false 0
 #define true  1
+#define false 0
 
 typedef unsigned char            u8;
 typedef unsigned short          u16;
@@ -48,14 +47,12 @@ typedef double                  f64;
     #include <direct.h>
     #include <shellapi.h>
 
-    #define FLUX_LINE_END "\r\n"
+    #define NEWLINE "\r\n"
     #define FLUX_INVALID_FILE INVALID_HANDLE_VALUE
     #define FLUX_INVALID_PROC INVALID_HANDLE_VALUE
     typedef HANDLE Flux_File;
     typedef HANDLE Flux_Proc;
     
-    
-
 #else
     // linux specific
 
@@ -66,7 +63,7 @@ typedef double                  f64;
     #include <fcntl.h>
     #include <dirent.h>
 
-    #define FLUX_LINE_END "\n"
+    #define NEWLINE "\n"
     #define FLUX_INVALID_FILE (-1)
     #define FLUX_INVALID_PROC (-1)
     typedef int Flux_File;
@@ -89,41 +86,27 @@ bool flux_sprintf(i8 *dest, u32 dest_len, i8 *fmt, ...) __attribute__ ((format (
 #define FLUX_MIN_LOG_LEVEL FLUX_LOG_LEVEL_INFO_BIT
 #endif // FLUX_MIN_LOG_LEVEL
 
+
+
+
+
 static void
-_flux_log(i8 *caller_file, i32 caller_line, Flux_Log_Level lvl, i8 *fmt, ...)
+_flux_log(i8 *file, i32 line, Flux_Log_Level lvl, i8 *fmt, ...)
 __attribute__ ((format (printf, 4, 5)))
 {
-    if (lvl < FLUX_MIN_LOG_LEVEL)
-        return;
-    
-    // TEMPORARY! replace fprintf with a proper method
-    
-    if (lvl & FLUX_LOG_LEVEL_VERBOSE_BIT) fprintf(stderr, "[");
-    if (lvl & FLUX_LOG_LEVEL_INFO_BIT)
-    if (lvl & FLUX_LOG_LEVEL_VERBOSE_BIT)
+    va_list args;
+    va_start(args, fmt);
 
-    switch (level) {
-    case lvl:
-        FLUX_FPRINTF(stderr, "[INFO] ");
-        break;
-    case FLUX_WARNING:
-        FLUX_FPRINTF(stderr, "[WARNING] ");
-        break;
-    case FLUX_ERROR:
-        FLUX_FPRINTF(stderr, "[ERROR] ");
-        break;
-    case FLUX_NO_LOGS:
-        return;
-    default:
-        FLUX_UNREACHABLE("flux_log");
-    }
+    // compute size needed with vsnprintf() into zero-size buffer
+    size_t len = vsnprintf(tmpbuf, 0, fmt, args);
+    
+    uintptr_t i = __atomic_fetch_add();
 
 }
 
 #define FLUX_LOG(lvl, msg, ...) do { _flux_log(__FILE__, __LINE__, lvl, msg,  __VA_ARGS__); } while(0)
 #define FLUX_UNUSED(value) (void)(value)
 #define FLUX_TODO(msg) do { FLUX_LOG(FLUX_LOG_LEVEL_ERROR_BIT, msg); abort(); } while(0)
-#define FLUX_UNREACHABLE(msg) do { FLUX_LOG(FLUX_LOG_LEVEL_ERROR_BIT, msg); abort(); } while(0)
 #define FLUX_ASSERT(x) (!(x) && FLUX_LOG(FLUX_LOG_LEVEL_ERROR_BIT, "Assertion failed: %s", #x) && (abort(), 1))
 
 #define FLUX_ARRAY_LEN(array) (sizeof(array)/sizeof(array[0]))

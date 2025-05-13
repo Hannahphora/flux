@@ -1,25 +1,24 @@
 # Flux Engine
 
 ## Building
-- compile with gcc or clang
+- bootstrap build system with gcc -o build build.c
+- 
 
-## stuff
-- engine.c and all its dependencies get compiled and linked into a single flux.dll engine library
-- all allocations to be done through allocators.h
+## Structure
 
-## Common
+### Common
 everything in common is header only
 - common
 - allocators
 - parsing
 - assertions
 - math
-- ds (data structure)
+- ds (data structures)
 - fs (file system/async io)
 - serialisation
 - timer
 
-## Core Systems
+### Core Systems
 - engine
 - ecs
 - logging
@@ -27,7 +26,7 @@ everything in common is header only
 - config
 - system loading
 
-## Systems
+### Systems
 - rendering
 - ai
 - animation
@@ -38,9 +37,14 @@ everything in common is header only
 - physics
 - ui
 - scene graph/management
-- string hashing and ids
 
-## Offline systems
+### Offline systems
 - asset preprocessing
 - cache asset location
-- unit tests
+- unit testing
+
+## other stuff
+
+- engine.c and all its dependencies get compiled and linked into a single flux.dll engine library
+- all allocations to be done through allocators.h
+- target hardware: x86_64 cpus, assuming stuff like 4kb page size, 64b cache lines etc...

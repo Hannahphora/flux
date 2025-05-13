@@ -1,6 +1,0 @@
-#ifndef INCLUDE_LOGGER_H
-#define INCLUDE_LOGGER_H
-
-
-
-#endif // INCLUDE_LOGGER_H
