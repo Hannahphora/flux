@@ -1,32 +1,74 @@
+/*------------------*/
+/* CONFIG OVERRIDES */
+/*------------------*/
+
+// e.g.
+// #define GAME "my-game"
+// #define CREATE_STATIC_BUILD
+
+/*------------------------*/
+/* DEFAULT CONFIG OPTIONS */
+/*------------------------*/
+
+#ifndef GAME
+    #define GAME "sample-game"
+#endif // GAME
+
+#ifndef CREATE_STATIC_BUILD
+    // default option already set
+#endif // CREATE_STATIC_BUILD
+
+#define BUILD_MODE_DEBUG    0
+#define BUILD_MODE_RELEASE  1
+#ifndef BUILD_MODE
+    #define BUILD_MODE BUILD_MODE_DEBUG
+#endif // BUILD_MODE
+
+#define OUTPUT_DIR          "out/"
+#define ENGINE_SRC_DIR      "engine/src/"
+#define ENGINE_RES_DIR      "engine/res/"
+#define GAME_SRC_DIR        GAME"/src/"
+#define GAME_RES_DIR        GAME"/res/"
+
+/*----------------*/
+/* INTERNALS/CODE */
+/*----------------*/
+
 #define HLP_IMPLEMENTATION
 #include "hlp.h"
 
 #define DA_IMPLEMENTATION
 #include "src/common/ds.h"
 
-#define OUT_DIR "out/"
-#define SRC_DIR "src/"
-#define RES_DIR "res/"
-
-#define COMMON_FLAGS "-std=c99", /*"-save-temps",*/ "-Wextra", "-Wall", "-Wpedantic", "-Werror", "-Wshadow"
-
-#ifdef _WIN32
-  #define SANITIZE_FLAGS "" /* sanitize doesnt work on windows */
-#else
-  #define SANITIZE_FLAGS "-fsanitize=address,leak,undefined"
-#endif
+#define COMMON_FLAGS \
+    "-m64", \
+    "-std=c99", \
+    "-save-temps", \
+    "-Wextra", \
+    "-Wall", \
+    "-Wpedantic", \
+    "-Werror", \
+    "-Wshadow"
 
 #define DEBUG_FLAGS \
     "-O0", \
-    "-D_DEBUG", \
+    "-D_DEBUG", "-DDEBUG", \
     "-g", \
-    SANITIZE_FLAGS, \
+    "-pg", \
+    /*"-fsanitize=address,leak,undefined",*/ \
     "-fno-omit-frame-pointer"
-// DEBUG_FLAGS
 
-#define RELEASE_FLAGS "-O3", "-flto", "-D_NDEBUG", "-s"
+#define RELEASE_FLAGS \
+    "-O3", \
+    "-flto", \
+    "-D_NDEBUG", "-DNDEBUG", \
+    "-s"
 
-const bool debug_mode = true;
+#if BUILD_MODE == BUILD_MODE_BUILD_MODE_DEBUG
+    const bool debug_mode = true;
+#else
+    const bool debug_mode = false;
+#endif // BUILD_MODE
 
 Cmd cmd = {0};
 Procs procs = {0};
