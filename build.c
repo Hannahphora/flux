@@ -37,8 +37,7 @@
 #define HLP_IMPLEMENTATION
 #include "hlp.h"
 
-#define DA_IMPLEMENTATION
-#include "src/common/ds.h"
+#include "src/common/common.h"
 
 #define COMMON_FLAGS \
     "-m64", \
@@ -60,7 +59,6 @@
 
 #define RELEASE_FLAGS \
     "-O3", \
-    "-flto", \
     "-D_NDEBUG", "-DNDEBUG", \
     "-s"
 
